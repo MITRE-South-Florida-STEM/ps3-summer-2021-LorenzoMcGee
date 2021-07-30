@@ -9,7 +9,6 @@
 
 import math
 import random
-import string
 import collections
 
 VOWELS = 'aeiou'
@@ -144,7 +143,7 @@ def deal_hand(n):
     """
     
     hand={}
-    num_vowels = int(math.ceil(n / 3))
+    num_vowels = int(math.ceil(n / 3) -1)
 
     for i in range(num_vowels):
         x = random.choice(VOWELS)
@@ -153,7 +152,7 @@ def deal_hand(n):
     for i in range(num_vowels, n):    
         x = random.choice(CONSONANTS)
         hand[x] = hand.get(x, 0) + 1
-    
+    hand["*"] = 1
     return hand
 
 #
