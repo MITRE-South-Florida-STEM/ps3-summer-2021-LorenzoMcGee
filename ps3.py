@@ -3,13 +3,14 @@
 # The 6.0001 Word Game
 # Created by: Kevin Luu <luuk> and Jenna Wiens <jwiens>
 #
-# Name          : <your name>
-# Collaborators : <your collaborators>
-# Time spent    : <total time>
+# Name          : Johanner Corrales
+# Collaborators : Raul Campos
+# Time spent    : Very very long
 
 import math
 import random
 import string
+import collections
 
 VOWELS = 'aeiou'
 CONSONANTS = 'bcdfghjklmnpqrstvwxyz'
@@ -91,8 +92,17 @@ def get_word_score(word, n):
     n: int >= 0
     returns: int >= 0
     """
+    sum = 0
+    wordlen = len(word)
+    word = word.lower()
+    for char in word:
+      sum += SCRABBLE_LETTER_VALUES.get(char,0)
+
+    addedNum = 7*wordlen - 3*(n-wordlen)
+    if(addedNum < 1):
+      addedNum = 1
     
-    pass  # TO DO... Remove this line when you implement this function
+    return sum * addedNum
 
 #
 # Make sure you understand how this function works and what it does!
@@ -167,8 +177,22 @@ def update_hand(hand, word):
     hand: dictionary (string -> int)    
     returns: dictionary (string -> int)
     """
+    word = word.lower()
+    
+    handString = ""
+    for letter in hand:
+      cnt = hand.get(letter,0)
+      while cnt > 0:
+        cnt -= 1
+        handString += letter
+    
+    for char in word:
+      if char in handString:
+        handString = handString[0:handString.index(char)]+handString[handString.index(char)+1:len(handString)]
+    return get_frequency_dict(handString)
 
-    pass  # TO DO... Remove this line when you implement this function
+
+
 
 #
 # Problem #3: Test word validity
@@ -185,7 +209,32 @@ def is_valid_word(word, hand, word_list):
     returns: boolean
     """
 
-    pass  # TO DO... Remove this line when you implement this function
+
+
+    word = word.lower()
+    eWord = False
+
+    for letter in word:
+      if letter not in hand:
+        return False
+
+
+    if word not in word_list:
+      if "*" not in word:
+        return False
+      else:
+        for vowel in VOWELS:
+          if word[0 : word.index("*")] + vowel + word[word.index("*") + 1 : len(word)] in word_list:
+            eWord = True
+
+    if "*" not in word:
+      eWord = True
+
+    letters = collections.Counter(hand)
+    letters.subtract(collections.Counter(get_frequency_dict(word)))
+    return all(v >= 0 for v in letters.values()) and eWord
+
+    #return (word in word_list) and
 
 #
 # Problem #5: Playing a hand
@@ -197,8 +246,13 @@ def calculate_handlen(hand):
     hand: dictionary (string-> int)
     returns: integer
     """
-    
-    pass  # TO DO... Remove this line when you implement this function
+    handString = ""
+    for letter in hand:
+      cnt = hand.get(letter,0)
+      while cnt > 0:
+        cnt -= 1
+        handString += letter
+    return len(handString)
 
 def play_hand(hand, word_list):
 
@@ -231,43 +285,50 @@ def play_hand(hand, word_list):
       
     """
     
-    # BEGIN PSEUDOCODE <-- Remove this comment when you implement this function
+    
     # Keep track of the total score
-    
+    score = 0
     # As long as there are still letters left in the hand:
-    
+    while calculate_handlen(hand)>0:
         # Display the hand
-        
+      display_hand(hand)    
         # Ask user for input
-        
+      inputVar = input("Please input word ")  
         # If the input is two exclamation points:
-        
+      if(inputVar == "!!"):
             # End the game (break out of the loop)
-
-            
+        break
+      
         # Otherwise (the input is not two exclamation points):
-
+      
             # If the word is valid:
-
+      if(is_valid_word(inputVar,hand,word_list)):
                 # Tell the user how many points the word earned,
                 # and the updated total score
-
+        pointsEarned = get_word_score(inputVar,calculate_handlen(hand))
+        score += pointsEarned
+        print("\"" + inputVar + "\"","earned",pointsEarned,"points for a total of",score)
             # Otherwise (the word is not valid):
                 # Reject invalid word (print a message)
-                
+      else:
+        print("That is an invalid word")          
             # update the user's hand by removing the letters of their inputted word
+      hand = update_hand(hand,inputVar)
             
 
     # Game is over (user entered '!!' or ran out of letters),
     # so tell user the total score
+    print("Ran out of letters. Total score:",score)
 
     # Return the total score as result of function
+    return(score)
 
 
 
 #
 # Problem #6: Playing a game
 # 
+
 
 
 #
@@ -296,25 +357,41 @@ def substitute_hand(hand, letter):
     letter: string
     returns: dictionary (string -> int)
     """
+    handString = ""
+    for char in hand:
+      cnt = hand.get(char,0)
+      while cnt > 0:
+        cnt -= 1
+        handString += char
+    if (letter not in handString):
+      return hand
+    prevSize = len(handString)
+    print(handString)
+    handString = handString.replace(letter,"")
+    print(handString)
+    allLetters = CONSONANTS+VOWELS
+    allLetters = allLetters.replace(letter,"")
+    for char in handString:
+      allLetters = allLetters.replace(char,"")
+    randElement = random.choice(allLetters)
+    while(len(handString)!= prevSize):
+      handString += randElement
+    return get_frequency_dict(handString)
+
     
-    pass  # TO DO... Remove this line when you implement this function
        
     
 def play_game(word_list):
     """
     Allow the user to play a series of hands
-
     * Asks the user to input a total number of hands
-
     * Accumulates the score for each hand into a total score for the 
       entire series
- 
     * For each hand, before playing, ask the user if they want to substitute
       one letter for another. If the user inputs 'yes', prompt them for their
       desired letter. This can only be done once during the game. Once the
       substitue option is used, the user should not be asked if they want to
       substitute letters in the future.
-
     * For each hand, ask the user if they would like to replay the hand.
       If the user inputs 'yes', they will replay the hand and keep 
       the better of the two scores for that hand.  This can only be done once 
@@ -322,18 +399,41 @@ def play_game(word_list):
       be asked if they want to replay future hands. Replaying the hand does
       not count as one of the total number of hands the user initially
       wanted to play.
-
             * Note: if you replay a hand, you do not get the option to substitute
                     a letter - you must play whatever hand you just had.
-      
     * Returns the total score for the series of hands
-
     word_list: list of lowercase strings
     """
     
-    print("play_game not implemented.") # TO DO... Remove this line when you implement this function
-    
-
+    numHands = (int)(input("How many hands ought to be played? "))
+    usedReplay = False
+    substituteUsed = False
+    generatedHand = deal_hand(HAND_SIZE)
+    totalScore = 0
+    while(numHands > 0):
+      generatedHand = deal_hand(HAND_SIZE)
+      display_hand(generatedHand)
+      if(not substituteUsed):
+        result = input("Would you like to substitute a letter? (yes/no) ")
+        if(result == "yes"):
+          result = input("What letter do you want to substitute? ")
+          if(result not in generatedHand):
+            print("You have wasted your substitution")
+          else:
+            generatedHand = substitute_hand(generatedHand,result)
+          substituteUsed = True
+      curScore = play_hand(generatedHand,word_list)
+      print("Current Score:",curScore)
+      if(not usedReplay):
+        result = input("Would you like to use a replay? (yes/no) ")
+        if(result == "yes"):
+          tempScore = play_hand(generatedHand,word_list)
+          curScore = max(tempScore,curScore)
+          usedReplay = True
+      totalScore += curScore
+      print("Overall Score:",totalScore)
+      numHands -= 1
+    print("Final Score:",totalScore)
 
 #
 # Build data structures used for entire session and play game
